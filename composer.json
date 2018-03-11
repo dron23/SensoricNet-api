@@ -1,0 +1,6 @@
+{
+	"require" : {
+		"wixel/gump" : "dev-master",
+		"jacwright/restserver" : "dev-master"
+	}
+}
