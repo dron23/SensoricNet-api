@@ -12,6 +12,8 @@ $conf['dbname'] = "sensoricnet";
 $conf['dbuser'] = "sensoricnet";
 $conf['dbpasswd'] = "********";
 
+$conf['mqtt_host'] = "127.0.0.1";
+
 
 $conf['log_severities'] = array (
 		'emergency' => 0,

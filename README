@@ -1,0 +1,35 @@
+# SensoricNet-api
+
+API stuff for SensoricNet project
+
+
+
+
+
+
+
+# misc
+
+```
+yum install mosquitto
+```
+
+```
+yum install php-pear
+yum install php-devel
+yum install mosquitto-devel
+```
+
+```
+pecl install "channel://pecl.php.net/Mosquitto-0.4.0"
+```
+
+```
+nano /etc/php.d/20-mosquitto.ini
+```
+
+```
+extension=mosquitto.so
+```
+
+

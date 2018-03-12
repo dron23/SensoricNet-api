@@ -222,6 +222,20 @@ class SensoricNetRestApi {
 			
 			logit ("info", "Transakce byla commitnuta");
 			
+			// TODO, kdy a jak posilat data dal po mqtt
+			
+// 			$c = new Mosquitto\Client;
+// 			$c->onConnect(function() use ($c) {
+// 				$c->publish('mgdm/test', 'Hello', 0);
+// 				$c->disconnect();
+// 			});
+				
+// 				$c->connect($conf['mqtt_host']);
+// 				$c->loopForever();
+				
+// 				echo "Finished\n";
+			
+			
 		} catch (PDOException $e) {
 			$this->db->rollBack();
 			logit ("error", "Chyba pri transakci vkladani mereni ".$e->getMessage());
