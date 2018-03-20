@@ -140,7 +140,18 @@ class SensoricNetRestApi {
 				$valueFloat = getValueFloat($field_name, $field_value);
 				
 				logit ("debug", "valueString: $valueString, valueFloat: $valueFloat");
-			
+				
+				// TODO, kdy a jak posilat data dal po mqtt, tady to urcite neni vhodne...
+				
+				$mqqt = new Mosquitto\Client;
+				$mqqt->onConnect(function() use ($mqqt) {
+					$mqqt->publish($conf['mqtt_basic_topic'].'/'.$data->dev_id.'/'.$field_name, $valueFloat, 0);
+					$mqqt->disconnect();
+				});
+				
+				$mqqt->connect($conf['mqtt_host']);
+				$mqqt->loopForever();
+				
 				// vloz namerenou hodnotu
 				$query = $this->db->prepare ('
 					INSERT INTO `values` (`id`, `timestamp`, `sensorId`, `valueString`, `valueFloat`) 
@@ -222,19 +233,7 @@ class SensoricNetRestApi {
 			
 			logit ("info", "Transakce byla commitnuta");
 			
-			// TODO, kdy a jak posilat data dal po mqtt
-			
-// 			$c = new Mosquitto\Client;
-// 			$c->onConnect(function() use ($c) {
-// 				$c->publish('mgdm/test', 'Hello', 0);
-// 				$c->disconnect();
-// 			});
-				
-// 				$c->connect($conf['mqtt_host']);
-// 				$c->loopForever();
-				
-// 				echo "Finished\n";
-			
+			// TODO, v pripade uspesneho ulozeni do db dores mqtt
 			
 		} catch (PDOException $e) {
 			$this->db->rollBack();

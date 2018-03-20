@@ -13,7 +13,7 @@ $conf['dbuser'] = "sensoricnet";
 $conf['dbpasswd'] = "********";
 
 $conf['mqtt_host'] = "127.0.0.1";
-
+$conf['mqtt_basic_topic'] = "SensoricNet";
 
 $conf['log_severities'] = array (
 		'emergency' => 0,
