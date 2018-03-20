@@ -12,6 +12,7 @@ class SensoricNetRestApi {
 	public $username;
 	var $conf;
 	var $db;
+	var $mqtt;
 
 	const VERSION = '1';
 
@@ -44,6 +45,12 @@ class SensoricNetRestApi {
 		$this->db = $db;
 		
 		logit ("debug", "authorize");
+		
+		logit ("debug", "mqtt init");
+		
+		$this->mqtt = new Mosquitto\Client();
+		$this->mqtt->connect($this->conf['mqtt_host'], $this->conf['mqtt_port'], $this->conf['mqtt_qos']);
+//		$client->subscribe('/#', 1);
 
 		return true;
 	}
@@ -112,6 +119,7 @@ class SensoricNetRestApi {
 	 * @url POST /ttn
 	 */
 	public function ttn_data_insert($data) {
+
 		logit ("debug", "API: URL: ".$_SERVER['REQUEST_URI']);
 		logit ("debug", "API: ttn: ".print_r($data, true));
 
@@ -142,15 +150,16 @@ class SensoricNetRestApi {
 				logit ("debug", "valueString: $valueString, valueFloat: $valueFloat");
 				
 				// TODO, kdy a jak posilat data dal po mqtt, tady to urcite neni vhodne...
+
+				$mqtt_topic = $this->conf['mqtt_basic_topic'].'/'.$data->dev_id.'/'.$field_name;
+				$mqtt_value = $valueFloat;
+				logit ("debug", "mqtt topic $mqtt_topic -> $valueFloat");
+
+				$this->mqtt->loop();
+				$mid = $client->publish($mqtt_topic, $mqtt_value, 1, 0);
+				logit ('debug', "Sent message ID: {$mid}");
+				$this->mqtt->loop();
 				
-				$mqqt = new Mosquitto\Client;
-				$mqqt->onConnect(function() use ($mqqt) {
-					$mqqt->publish($conf['mqtt_basic_topic'].'/'.$data->dev_id.'/'.$field_name, $valueFloat, 0);
-					$mqqt->disconnect();
-				});
-				
-				$mqqt->connect($conf['mqtt_host']);
-				$mqqt->loopForever();
 				
 				// vloz namerenou hodnotu
 				$query = $this->db->prepare ('

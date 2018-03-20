@@ -14,6 +14,8 @@ $conf['dbpasswd'] = "********";
 
 $conf['mqtt_host'] = "127.0.0.1";
 $conf['mqtt_basic_topic'] = "SensoricNet";
+$conf['mqtt_port'] = 1883;
+$conf['mqtt_qos'] = 5;
 
 $conf['log_severities'] = array (
 		'emergency' => 0,
