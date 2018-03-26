@@ -4,8 +4,8 @@
 /**
  * logovani podle nastavene severity na obrazovku a do souboru
  *
- * @param unknown_type $severity
- * @param unknown_type $text
+ * @param string $severity
+ * @param string $text
  */
 function logit($severity, $text) {
 	global $conf, $log;

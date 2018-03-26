@@ -156,7 +156,7 @@ class SensoricNetRestApi {
 				logit ("debug", "mqtt topic $mqtt_topic -> $valueFloat");
 
 				$this->mqtt->loop();
-				$mid = $client->publish($mqtt_topic, $mqtt_value, 1, 0);
+				$mid = $this->mqtt->publish($mqtt_topic, $mqtt_value, 1, 0);
 				logit ('debug', "Sent message ID: {$mid}");
 				$this->mqtt->loop();
 				
