@@ -250,6 +250,50 @@ class SensoricNetRestApi {
 			//exit (); // asi teda nema cenu pokracovat? TODO
 		}
 	}
+	
+	/**
+	 * Vlozi nove sensenet cidlo (sedm senzoru)
+	 *
+	 * @url PUT /sensoricnet/sensor/$devId
+	 */
+	public function create_sensoricnet_sensor($devId) {
+
+		logit ("debug", "API: URL: ".$_SERVER['REQUEST_URI']);
+		logit ("debug", "API: ttn: devId: $devId");
+
+		// sensoricnet sensors definition
+		$sensors[1]=array('fieldId' => 'temperature_1', 'unitType' => '1', 'unitName' => '°C', 'description' => 'Teplota');
+		$sensors[2]=array('fieldId' => 'barometric_pressure_2', 'unitType' => '2', 'unitName' => 'hPa', 'description' => 'Tlak');
+		$sensors[3]=array('fieldId' => 'relative_humidity_3', 'unitType' => '3', 'unitName' => '%', 'description' => 'Relativní vlhkost');
+		$sensors[4]=array('fieldId' => 'analog_in_4', 'unitType' => '4', 'unitName' => 'ppm', 'description' => 'Prach 1um');
+		$sensors[5]=array('fieldId' => 'analog_in_5', 'unitType' => '4', 'unitName' => 'ppm', 'description' => 'Prach 2,5um');
+		$sensors[6]=array('fieldId' => 'analog_in_6', 'unitType' => '4', 'unitName' => 'ppm', 'description' => 'Prach 10um');
+		$sensors[7]=array('fieldId' => 'gps_7', 'unitType' => '5', 'unitName' => 'GPS', 'description' => 'GPS');
+
+		foreach ($sensors as $key=>$sensor) {
+			// vloz senzor
+			$query = $this->db->prepare ('
+				INSERT INTO `sensors` (`id`, `appId`, `devId`, `fieldId`, `unitType`, `unitName`, `description`)
+				VALUES(:id, :appId, :devId, :fieldId, :unitType, :unitName, :description)
+			');
+			
+			$query->bindParam ( ':id', $this->conf['app_id'].':'.$devId.':'.$sensor['fieldId'] );
+			$query->bindParam ( ':appId', $this->conf['app_id'] );
+			$query->bindParam ( ':devId', $devId );
+			$query->bindParam ( ':fieldId', $sensor['fieldId'] );
+			$query->bindParam ( ':unitType', $sensor['unitType'] );
+			$query->bindParam ( ':unitName', $sensor['unitName'] );
+			$query->bindParam ( ':description', $sensor['description'] );
+
+			logit ("debug", "inserting sensor ".$this->conf['app_id'].':'.$devId.':'.$fieldId);
+			
+			if ($query->execute()) {
+				logit ("debug", "Vlozeni senzoru probehlo ok");
+			} else {
+				logit ("error", "Vlozeni senzoru probehlo s chybou ".print_r($query->errorInfo(), true));
+			}
+		}
+	}
 }	
 
 $mode = 'debug'; // 'debug' or 'production'

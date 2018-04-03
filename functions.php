@@ -10,11 +10,10 @@
 function logit($severity, $text) {
 	global $conf, $log;
 
-	if ($conf['test']) $test_txt = "TESTING "; else $test_txt = "";
 	if ($conf['log_severities'][$conf['log_severity']] >= $conf['log_severities'][$severity]) {
 		$text_array = explode("\n", $text);
 		foreach ($text_array as $line) {
-			fputs($log, date("Ymd H:i:s ") . strtoupper($severity) . ": " . $test_txt . $line . "\n");
+			fputs($log, date("Ymd H:i:s ") . strtoupper($severity) . ": " . $line . "\n");
 		}
 	}
 }

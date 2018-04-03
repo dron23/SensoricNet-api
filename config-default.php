@@ -12,6 +12,8 @@ $conf['dbname'] = "sensoricnet";
 $conf['dbuser'] = "sensoricnet";
 $conf['dbpasswd'] = "********";
 
+$conf['app_id'] = "SensoricNet";
+
 $conf['mqtt_host'] = "127.0.0.1";
 $conf['mqtt_basic_topic'] = "SensoricNet";
 $conf['mqtt_port'] = 1883;
