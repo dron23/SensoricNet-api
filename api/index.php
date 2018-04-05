@@ -250,11 +250,45 @@ class SensoricNetRestApi {
 			//exit (); // asi teda nema cenu pokracovat? TODO
 		}
 	}
+
+	/**
+	 * Vrati vsechny sensenet cidla (a jejich senzory?)
+	 *
+	 * @url GET /sensoricnet/sensors
+	 */
+	public function get_sensoricnet_sensor_all() {
+		
+		logit ("debug", "API: URL: ".$_SERVER['REQUEST_URI']);
+		
+		// sensoricnet sensors definition
+		$sensors[1]=array('fieldId' => 'temperature_1', 'unitType' => '1', 'unitName' => '°C', 'description' => 'Teplota');
+		$sensors[2]=array('fieldId' => 'barometric_pressure_2', 'unitType' => '3', 'unitName' => 'hPa', 'description' => 'Tlak');
+		$sensors[3]=array('fieldId' => 'relative_humidity_3', 'unitType' => '2', 'unitName' => '%', 'description' => 'Relativní vlhkost');
+		$sensors[4]=array('fieldId' => 'analog_in_4', 'unitType' => '5', 'unitName' => 'ppm', 'description' => 'Prach 1um');
+		$sensors[5]=array('fieldId' => 'analog_in_5', 'unitType' => '5', 'unitName' => 'ppm', 'description' => 'Prach 2,5um');
+		$sensors[6]=array('fieldId' => 'analog_in_6', 'unitType' => '5', 'unitName' => 'ppm', 'description' => 'Prach 10um');
+		$sensors[7]=array('fieldId' => 'gps_7', 'unitType' => '4', 'unitName' => 'GPS', 'description' => 'GPS');
+		
+		// zjisti senzory senzor
+		$query = $this->db->prepare ('
+			SELECT `id`, `appId`, `devId`, `fieldId`, `unitType`, `unitName`, `description` FROM `sensors` WHERE 1 ORDER BY `devId`
+		');
+		$query->execute ();
+		
+		if ($result = $query->fetchAll ( PDO::FETCH_ASSOC)) {
+			logit ("debug", "Dotaz na senzory probehlo ok");
+			return $result;
+		} else {
+			logit ("error", "Dotaz na senzory probehl s chybou ".print_r($query->errorInfo(), true));
+			return array('status' => 'error', 'description' => $query->errorInfo()[2]);
+		}
+	}
+
 	
 	/**
-	 * Vlozi nove sensenet cidlo (sedm senzoru)
+	 * Vlozi do db nove sensenet cidlo (sedm senzoru)
 	 *
-	 * @url PUT /sensoricnet/sensor/$devId
+	 * @url PUT /sensoricnet/sensors/$devId
 	 */
 	public function create_sensoricnet_sensor($devId) {
 
@@ -263,21 +297,23 @@ class SensoricNetRestApi {
 
 		// sensoricnet sensors definition
 		$sensors[1]=array('fieldId' => 'temperature_1', 'unitType' => '1', 'unitName' => '°C', 'description' => 'Teplota');
-		$sensors[2]=array('fieldId' => 'barometric_pressure_2', 'unitType' => '2', 'unitName' => 'hPa', 'description' => 'Tlak');
-		$sensors[3]=array('fieldId' => 'relative_humidity_3', 'unitType' => '3', 'unitName' => '%', 'description' => 'Relativní vlhkost');
-		$sensors[4]=array('fieldId' => 'analog_in_4', 'unitType' => '4', 'unitName' => 'ppm', 'description' => 'Prach 1um');
-		$sensors[5]=array('fieldId' => 'analog_in_5', 'unitType' => '4', 'unitName' => 'ppm', 'description' => 'Prach 2,5um');
-		$sensors[6]=array('fieldId' => 'analog_in_6', 'unitType' => '4', 'unitName' => 'ppm', 'description' => 'Prach 10um');
-		$sensors[7]=array('fieldId' => 'gps_7', 'unitType' => '5', 'unitName' => 'GPS', 'description' => 'GPS');
+		$sensors[2]=array('fieldId' => 'barometric_pressure_2', 'unitType' => '3', 'unitName' => 'hPa', 'description' => 'Tlak');
+		$sensors[3]=array('fieldId' => 'relative_humidity_3', 'unitType' => '2', 'unitName' => '%', 'description' => 'Relativní vlhkost');
+		$sensors[4]=array('fieldId' => 'analog_in_4', 'unitType' => '5', 'unitName' => 'ppm', 'description' => 'Prach 1um');
+		$sensors[5]=array('fieldId' => 'analog_in_5', 'unitType' => '5', 'unitName' => 'ppm', 'description' => 'Prach 2,5um');
+		$sensors[6]=array('fieldId' => 'analog_in_6', 'unitType' => '5', 'unitName' => 'ppm', 'description' => 'Prach 10um');
+		$sensors[7]=array('fieldId' => 'gps_7', 'unitType' => '4', 'unitName' => 'GPS', 'description' => 'GPS');
 
 		foreach ($sensors as $key=>$sensor) {
-			// vloz senzor
+				// vloz senzor
 			$query = $this->db->prepare ('
 				INSERT INTO `sensors` (`id`, `appId`, `devId`, `fieldId`, `unitType`, `unitName`, `description`)
 				VALUES(:id, :appId, :devId, :fieldId, :unitType, :unitName, :description)
 			');
 			
-			$query->bindParam ( ':id', $this->conf['app_id'].':'.$devId.':'.$sensor['fieldId'] );
+			$id = $this->conf['app_id'].':'.$devId.':'.$sensor['fieldId'];
+			
+			$query->bindParam ( ':id', $id );
 			$query->bindParam ( ':appId', $this->conf['app_id'] );
 			$query->bindParam ( ':devId', $devId );
 			$query->bindParam ( ':fieldId', $sensor['fieldId'] );
@@ -289,8 +325,10 @@ class SensoricNetRestApi {
 			
 			if ($query->execute()) {
 				logit ("debug", "Vlozeni senzoru probehlo ok");
+				return array('status' => 'ok');
 			} else {
 				logit ("error", "Vlozeni senzoru probehlo s chybou ".print_r($query->errorInfo(), true));
+				return array('status' => 'error', 'description' => $query->errorInfo()[2]);
 			}
 		}
 	}
