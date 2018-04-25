@@ -5,3 +5,4 @@
 /vendor/*
 !/vendor/.gitkeep
 /composer.lock
+/.buildpath
