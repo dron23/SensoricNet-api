@@ -1,0 +1,8 @@
+/var/www/html/log/sensoricnet_api.log {
+    rotate 4
+    weekly
+    compress
+    missingok
+    su php-fpm php-fpm
+    create php-fpm php-fpm
+}

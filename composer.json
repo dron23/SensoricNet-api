@@ -2,10 +2,10 @@
 	"require" : {
 		"wixel/gump" : "dev-master",
 		"jacwright/restserver" : "dev-master",
-		"tracy/tracy" : "dev-master"
+		"tracy/tracy" : "dev-master",
+		"katzgrau/klogger": "dev-master"
 	},
 	"autoload" : {
-		
 		"psr-4" : {
 			"SensoricNet\\": "src"
 		}

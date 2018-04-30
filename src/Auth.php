@@ -8,10 +8,10 @@ class Auth {
 	
 	// hodnoty předávané při přihlašování uživatele
 	public $username;
-	public $password;
+	private $password;
 	
 	// hodnoty o uživateli
-	public $user_id;
+	private $user_id;
 	public $firstname;
 	public $lastname;
 	
@@ -24,12 +24,18 @@ class Auth {
 	private $ip;
 	private $last_time;
 	
-	// nastavení délky nečinosti uľivatele před odhláąením
+	// nastavení delky necinosti uzivatele pred odhlasenim
 	public $checktimelimit;
 	
-	// spojení na databázi
-	public $db;
-	public $table;
+	private $logger;
+	private $db;
+	
+	function __construct() {
+		global $logger;
+		$this->logger = $logger;
+		global $db;
+		$this->db = $db;
+	}
 	
 	// konstruktor třídy obsahující inicializaci některých proměných
 	public function login() {
@@ -48,8 +54,6 @@ class Auth {
 		$this->username=$this->test_sql($this->username);
 		$this->login_pw=$this->test_sql($this->login_pw);
 		
-		global $db;
-		$this->db=$db;
 		$this->ipaddr=$_SERVER["REMOTE_ADDR"];
 		
 		// délka časového limitu v sekundách od posledního přístupu
