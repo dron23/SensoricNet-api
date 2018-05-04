@@ -119,6 +119,59 @@ class SensoricNetRestApi {
 		} else
 			return false;
 	}
+
+	/**
+	 * Vrati senzory s vystupy pro vykresleni mapy
+	 *
+	 * @noAuth
+	 * @url GET /sensors/map
+	 * @url GET /sensors/map/$long0/$lat0/$long1/$lat1
+	 */
+	public function getSensorsMap() {
+		$this->logger->debug("API: URL: ".$_SERVER['REQUEST_URI']);
+		
+		if (($long0) and ($lat0) and ($long1) and ($lat1)) {
+			//zobraz vyrez, TODO
+		} else {
+			//zobraz celou mapu
+			// najdi vsechny senzory
+			$query = $this->db->prepare ('
+				SELECT DISTINCT(devId) AS devId, lastLatitude AS lat, lastLongitude AS lng, lastAltitude AS alt, lastSeen AS time
+				FROM `sensors` 
+				ORDER BY lastSeen DESC
+			');
+			$query->execute ();
+			
+			if ($result = $query->fetchAll ( PDO::FETCH_ASSOC )) {
+				foreach ($result as $key=>$row) {
+					// pro kazdy senzor dohledej jeho cidla a posledni
+					$query_last_values = $this->db->prepare ('
+						SELECT s.fieldId, s.unitType, s.unitName, v.valueFloat, v.timestamp
+						FROM `sensors` s 
+						LEFT JOIN `values` v ON v.sensorId = s.id 
+						WHERE devId = :devId 
+						GROUP BY sensorId 
+					');
+					$query_last_values->bindParam ( ':devId', $row['devId']);
+					$query_last_values->execute ();
+					
+					$sensors = $query_last_values->fetchAll ( PDO::FETCH_CLASS );
+					// poskladej vystup pro dejva...
+					$output[$row['devId']]=array(
+							'lat' => $row['lat'],
+							'lng' => $row['lng'],
+							'alt' => $row['alt'],
+							'time' => $row['time'],
+							'sensors'=>$sensors
+					);
+				}
+				return $output;
+			} else {
+				$this->logger->error ("Cteni z db probehlo s chybou ".print_r($query->errorInfo(), true));
+				return false;
+			}
+		}
+	}
 	
 
 	/**
@@ -144,9 +197,7 @@ class SensoricNetRestApi {
 			// projdi vsechny namerene hodnot v packetu (payload_fields object)
 			foreach($data->payload_fields as $field_name=>$field_value) {
 				
-				if (!is_object($field_value)) {
-					$this->logger->debug("field name: $field_name, field value: $field_value");
-				}
+				$this->logger->debug("field name: $field_name, field value: ".print_r($field_value, true));
 				
 				if ($field_name == 'gps_7') {
 					// gps souradnice budeme zpracovavat specialne
@@ -180,17 +231,25 @@ class SensoricNetRestApi {
 						VALUES (NULL, :metadataTime, :sensorId, :valueString, :valueFloat)
 					');
 					
-					$query->bindParam ( ':metadataTime', $data->metadata->time, PDO::PARAM_STR);
+					// na zaklade merene hodnoty zjisti string nebo float hodnotu
+					// TODO
+					$valueString = getValueString($field_name, $field_value);
+					$valueFloat = getValueFloat($field_name, $field_value);
+
+					$mysql_date = $this->rfc3339extToDatetime($data->metadata->time);
+					
+					$query->bindParam ( ':metadataTime', $mysql_date, PDO::PARAM_STR);
 					$query->bindParam ( ':sensorId', $sensorId );
 					$query->bindParam ( ':valueString', $valueString );
 					$query->bindParam ( ':valueFloat', $valueFloat );
 		
-					$this->logger->debug ("metadata_time: ".$data->metadata->time.", sensorId: $sensorId, valueString: $valueString, valueFloat: $valueFloat");
+					$this->logger->debug ("metadata_time: ".$data->metadata->time." ($mysql_date), sensorId: $sensorId, valueString: $valueString, valueFloat: $valueFloat");
 					
 					if ($query->execute()) {
 						$this->logger->debug ("Vlozeni value probehlo ok");
 					} else {
 						$this->logger->error ("Vlozeni value probehlo s chybou ".print_r($query->errorInfo(), true));
+						throw new \PDOException('Vlozeni value probehlo s chybou');
 					}
 					
 					// napln pole idcek vlozenych hodnot
@@ -217,9 +276,11 @@ class SensoricNetRestApi {
 				VALUES (NULL, :gatewayId, :time, :channel, :rssi, :snr, :frequency,
 						:modulation, :dataRate, :codingRate)
 				');
+
+				$mysql_date = $this->rfc3339extToDatetime($gateway->time);
 				
 				$query_measurement->bindParam (':gatewayId', $gateway->gtw_id);
-				$query_measurement->bindParam (':time', $gateway->time );
+				$query_measurement->bindParam (':time', $mysql_date );
 				$query_measurement->bindParam (':channel', $gateway->channel );
 				$query_measurement->bindParam (':rssi', $gateway->rssi );
 				$query_measurement->bindParam (':snr', $gateway->snr );
@@ -228,12 +289,13 @@ class SensoricNetRestApi {
 				$query_measurement->bindParam (':dataRate', $data->metadata->data_rate );
 				$query_measurement->bindParam (':codingRate', $data->metadata->coding_rate );
 				
-				$this->logger->debug ("gatewayId: ".$gateway->gtw_id.", time: ".$gateway->time.", channel: ".$gateway->channel.", rssi: ".$gateway->rssi.", snr: ".$gateway->snr.", frequency: ".$data->metadata->frequency.", modulation: ".$data->metadata->modulation.", dataRate: ".$data->metadata->data_rate.", codingRate: ".$data->metadata->coding_rate);
+				$this->logger->debug ("gatewayId: ".$gateway->gtw_id.", time: ".$gateway->time." ($mysql_date), channel: ".$gateway->channel.", rssi: ".$gateway->rssi.", snr: ".$gateway->snr.", frequency: ".$data->metadata->frequency.", modulation: ".$data->metadata->modulation.", dataRate: ".$data->metadata->data_rate.", codingRate: ".$data->metadata->coding_rate);
 
 				if ($query_measurement->execute()) {
 					$this->logger->debug ("Vlozeni measurementu probehlo ok");
 				} else {
-					$this->logger->error("Vlozeni measurementu probehlo s chybou ".print_r($query_measurement->errorInfo(), true));
+					$this->logger->error ("Vlozeni measurementu probehlo s chybou ".print_r($query_measurement->errorInfo(), true));
+					throw new \PDOException('Vlozeni measurementu probehlo s chybou');
 				}
 				
 				// napln pole idcek vlozenych mereni (gw)
@@ -256,7 +318,13 @@ class SensoricNetRestApi {
 					
 					$this->logger->debug ("values_id: $values_id, measurement_id: $measurement_id");
 					
-					$query_valuesHasMeasurement->execute ();
+					if ($query_valuesHasMeasurement->execute()) {
+						$this->logger->debug ("Vlozeni propojeni value a measurementu probehlo ok");
+					} else {
+						$this->logger->error ("Vlozeni propojeni value a measurementu probehlo s chybou ".print_r($query_valuesHasMeasurement->errorInfo(), true));
+						throw new \PDOException('Vlozeni propojeni value a measurementu probehlo s chybou');
+					}
+					
 				}
 			}
 			
@@ -363,27 +431,12 @@ class SensoricNetRestApi {
 	}
 	
 	
-// 	20180430 22:43:17 DEBUG:                     [0] => stdClass Object
-// 	20180430 22:43:17 DEBUG:                         (
-// 	20180430 22:43:17 DEBUG:                             [gtw_id] => eui-b827ebfffe41b87b
-// 	20180430 22:43:17 DEBUG:                             [timestamp] => 3062930067
-// 	20180430 22:43:17 DEBUG:                             [time] => 2018-04-30T20:43:17.287742Z
-// 	20180430 22:43:17 DEBUG:                             [channel] => 1
-// 	20180430 22:43:17 DEBUG:                             [rssi] => -107
-// 	20180430 22:43:17 DEBUG:                             [snr] => 8.2
-// 	20180430 22:43:17 DEBUG:                             [rf_chain] => 1
-// 	20180430 22:43:17 DEBUG:                             [latitude] => 49.93057
-// 	20180430 22:43:17 DEBUG:                             [longitude] => 17.893877
-// 	20180430 22:43:17 DEBUG:                             [altitude] => 320
-// 	20180430 22:43:17 DEBUG:                             [location_source] => registry
-// 	20180430 22:43:17 DEBUG:                         )
-	
 	/**
 	 * Testuje, jestli je tato gw uz v databazi
 	 * 
 	 * @param object $gateway
 	 */
-	private function gwExists(object $gateway):bool {
+	private function gwExists(\stdClass $gateway):bool {
 		$query = $this->db->prepare ('
 			SELECT `id` FROM `gateways` WHERE `id` = :gtw_id
 		');
@@ -402,13 +455,20 @@ class SensoricNetRestApi {
 	 * 
 	 * @param object $gateway
 	 */
-	private function gwInsert(object $gateway) {
+	private function gwInsert(\stdClass $gateway) {
 		$query = $this->db->prepare ('
 			INSERT INTO `gateways` (`id`, `type`, `description`, `lastLatitude`, `lastLongitude`, `lastAltitude`, `lastSeen`) 
 				VALUES (:gtw_id, :type, NULL, :latitude, :longitude, :altitude, NOW())
 		');
+
+		if ($gateway->gtw_id == 'Vodafone_NBIot') {
+			$type = 'nbiot';
+		} else {
+			$type = 'lora';
+		}
+		
 		$query->bindParam ( ':gtw_id', $gateway->gtw_id );
-		$query->bindParam ( ':type', $gateway->gtw_id == 'Vodafone_NBIot' ? 'nbiot' : 'lora' );
+		$query->bindParam ( ':type', $type );
 		$query->bindParam ( ':latitude', $gateway->latitude );
 		$query->bindParam ( ':longitude', $gateway->longitude );
 		$query->bindParam ( ':altitude', $gateway->altitude );
@@ -428,7 +488,7 @@ class SensoricNetRestApi {
 	 *
 	 * @param object $gateway
 	 */
-	private function gwUpdate(object $gateway) {
+	private function gwUpdate(\stdClass $gateway) {
 		$query = $this->db->prepare ('
 			UPDATE `gateways` SET `lastLatitude` = :latitude, `lastLongitude` = :longitude, `lastAltitude` = :altitude, `lastSeen` = NOW() 
 			WHERE `gateways`.`id` = :gtw_id
@@ -454,19 +514,33 @@ class SensoricNetRestApi {
 	 * @param string $dev_id
 	 * @param object $gps_object
 	 */
-	private function sensorPositionUpdate(string $dev_id, object $gps_object) {
+	private function sensorPositionUpdate($dev_id, \stdClass $gps_object) {
 		// pokud se poloha zmenila (TODO), vloz novou polohu do db
+		
+		$this->logger->debug ("gps_object: ".print_r($gps_object, true));
+		
+		// update posledni polohy celeho senzoru
 		$query = $this->db->prepare ('
-			INSERT INTO `sensorsPositions` (`id`, `sensorDevId`, `time`, `latitude`, `longitude`, `altitude`, `changed`) 
-				VALUES (NULL, :dev_id, NOW(), :latitude, :longitude, :altitude, NULL)
+			UPDATE `sensors` SET `lastLatitude` = :latitude, `lastLongitude` = :longitude, `lastAltitude` = :altitude, `lastSeen` = NOW() 
+			WHERE `sensors`.`devId` = :dev_id
 		');
-		$query->bindParam ( ':gtw_id', $dev_id );
+		$query->bindParam ( ':dev_id', $dev_id );
 		$query->bindParam ( ':latitude', $gps_object->latitude );
 		$query->bindParam ( ':longitude', $gps_object->longitude );
 		$query->bindParam ( ':altitude', $gps_object->altitude );
 		$query->execute ();
+
+		// vlozeni polohy senzoru
+		$query = $this->db->prepare ('
+			INSERT INTO `sensorsPositions` (`id`, `sensorDevId`, `time`, `latitude`, `longitude`, `altitude`, `changed`) 
+				VALUES (NULL, :dev_id, NOW(), :latitude, :longitude, :altitude, NULL)
+		');
+		$query->bindParam ( ':dev_id', $dev_id );
+		$query->bindParam ( ':latitude', $gps_object->latitude );
+		$query->bindParam ( ':longitude', $gps_object->longitude );
+		$query->bindParam ( ':altitude', $gps_object->altitude );
 		
-		$this->logger->debug ("Vkladam polohu sensoru $dev_id: ".$gps_object);
+		$this->logger->debug ("Vkladam polohu sensoru $dev_id: ".print_r($gps_object, true));
 		
 		if ($query->execute()) {
 			$this->logger->debug ("Vlozeni polohy senzoru $dev_id probehlo ok");
@@ -475,4 +549,20 @@ class SensoricNetRestApi {
 		}
 	}
 	
+	/**
+	 * konvertuje DATE_RFC3339_EXTENDED do datetime formatu mysql s mikroskundovym rozsirenim
+	 * 
+	 * @param string $date
+	 * @return string
+	 */
+	private function rfc3339extToDatetime (string $date):string {
+		// je potreba zkonvertovat 2018-03-11T19:54:48.88257344Z
+		// coz je asi DATE_RFC3339_EXTENDED
+		// do mariadb formy 2018-03-11 19:54:48.882573
+
+		$date = substr($date, 0, 26);
+		$date = substr_replace($date, ' ', 10, 1);
+		return $date;
+	}
+
 }	
