@@ -138,13 +138,15 @@ class SensoricNetRestApi {
 			$query = $this->db->prepare ('
 				SELECT DISTINCT(devId) AS devId, lastLatitude AS lat, lastLongitude AS lng, lastAltitude AS alt, lastSeen AS time
 				FROM `sensors` 
+				WHERE lastLatitude IS NOT NULL AND lastLongitude IS NOT NULL AND lastAltitude IS NOT NULL AND lastSeen IS NOT NULL
 				ORDER BY lastSeen DESC
 			');
 			$query->execute ();
 			
 			if ($result = $query->fetchAll ( PDO::FETCH_ASSOC )) {
 				foreach ($result as $key=>$row) {
-					// pro kazdy senzor dohledej jeho cidla a posledni
+					// pro kazdy senzor dohledej jeho cidla a posledni hodnoty
+					// to je uplne nepouzitelnej dotaz, optimalizovat TODO
 					$query_last_values = $this->db->prepare ('
 						SELECT s.fieldId, s.unitType, s.unitName, v.valueFloat, v.timestamp
 						FROM `sensors` s 
