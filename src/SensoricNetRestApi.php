@@ -133,8 +133,8 @@ class SensoricNetRestApi {
 		if (($long0) and ($lat0) and ($long1) and ($lat1)) {
 			//zobraz vyrez, TODO
 		} else {
-			//zobraz celou mapu
-			// najdi vsechny senzory
+			// zobraz celou mapu
+			// najdi vsechny senzory co maji nejakou gps pozici
 			$query = $this->db->prepare ('
 				SELECT DISTINCT(devId) AS devId, lastLatitude AS lat, lastLongitude AS lng, lastAltitude AS alt, lastSeen AS time
 				FROM `sensors` 
@@ -146,13 +146,10 @@ class SensoricNetRestApi {
 			if ($result = $query->fetchAll ( PDO::FETCH_ASSOC )) {
 				foreach ($result as $key=>$row) {
 					// pro kazdy senzor dohledej jeho cidla a posledni hodnoty
-					// to je uplne nepouzitelnej dotaz, optimalizovat TODO
 					$query_last_values = $this->db->prepare ('
-						SELECT s.fieldId, s.unitType, s.unitName, v.valueFloat, v.timestamp
-						FROM `sensors` s 
-						LEFT JOIN `values` v ON v.sensorId = s.id 
-						WHERE devId = :devId 
-						GROUP BY sensorId 
+						SELECT fieldId, unitType, unitName, lastValueFloat AS lastValue, lastSeen AS timestamp
+						FROM `sensors` 
+						WHERE devId = :devId AND lastValueFloat IS NOT NULL
 					');
 					$query_last_values->bindParam ( ':devId', $row['devId']);
 					$query_last_values->execute ();
@@ -210,13 +207,13 @@ class SensoricNetRestApi {
 					$sensorId = $data->app_id.':'.$data->dev_id.':'.$field_name;
 					
 					// na zaklade merene hodnoty zjisti string nebo float hodnotu
-					$valueString = getValueString($field_name, $field_value);
-					$valueFloat = getValueFloat($field_name, $field_value);
+					$valueString = $this->getValueString($field_name, $field_value);
+					$valueFloat = $this->getValueFloat($field_name, $field_value);
 					
 					$this->logger->debug("valueString: $valueString, valueFloat: $valueFloat");
 					
-					// TODO, kdy a jak posilat data dal po mqtt, tady to urcite neni vhodne...
-	
+					// kdy a jak posilat data dal po mqtt, tady to urcite neni vhodne...
+					// TODO
 					$mqtt_topic = $this->conf['mqtt_basic_topic'].'/'.$data->dev_id.'/'.$field_name;
 					$mqtt_value = $valueFloat;
 					$this->logger->debug("mqtt topic $mqtt_topic -> $valueFloat");
@@ -225,7 +222,9 @@ class SensoricNetRestApi {
 					$mid = $this->mqtt->publish($mqtt_topic, $mqtt_value, 1, 0);
 					$this->logger->debug ("Sent message ID: {$mid}");
 					$this->mqtt->loop();
-					
+
+					// updatni posledni hodnotu
+					$this->sensorLastValueUpdate($sensorId, $valueString, $valueFloat);
 					
 					// vloz namerenou hodnotu
 					$query = $this->db->prepare ('
@@ -233,11 +232,6 @@ class SensoricNetRestApi {
 						VALUES (NULL, :metadataTime, :sensorId, :valueString, :valueFloat)
 					');
 					
-					// na zaklade merene hodnoty zjisti string nebo float hodnotu
-					// TODO
-					$valueString = getValueString($field_name, $field_value);
-					$valueFloat = getValueFloat($field_name, $field_value);
-
 					$mysql_date = $this->rfc3339extToDatetime($data->metadata->time);
 					
 					$query->bindParam ( ':metadataTime', $mysql_date, PDO::PARAM_STR);
@@ -523,7 +517,7 @@ class SensoricNetRestApi {
 		
 		// update posledni polohy celeho senzoru
 		$query = $this->db->prepare ('
-			UPDATE `sensors` SET `lastLatitude` = :latitude, `lastLongitude` = :longitude, `lastAltitude` = :altitude, `lastSeen` = NOW() 
+			UPDATE `sensors` SET `lastLatitude` = :latitude, `lastLongitude` = :longitude, `lastAltitude` = :altitude 
 			WHERE `sensors`.`devId` = :dev_id
 		');
 		$query->bindParam ( ':dev_id', $dev_id );
@@ -550,6 +544,35 @@ class SensoricNetRestApi {
 			$this->logger->error ("Vlozeni polohy senzoru $dev_id probehlo s chybou ".print_r($query->errorInfo(), true));
 		}
 	}
+
+	/**
+	 * Vlozi posledni hodnotu senzoru
+	 * 
+	 * @param string $sensorId
+	 * @param string $valueString
+	 * @param float $valueFloat
+	 */
+	private function sensorLastValueUpdate(string $sensorId, $valueString, $valueFloat) {
+		$this->logger->debug ("gps_object: ".print_r($gps_object, true));
+		
+		// update posledni polohy celeho senzoru
+		$query = $this->db->prepare ('
+			UPDATE `sensors` SET `lastValueString` = :valueString, `lastValueFloat` = :valueFloat, `lastSeen` = NOW()
+			WHERE `sensors`.`id` = :sensorId
+		');
+		$query->bindParam ( ':sensorId', $sensorId );
+		$query->bindParam ( ':valueString', $valueString);
+		$query->bindParam ( ':valueFloat', $valueFloat);
+		
+		$this->logger->debug ("Vkladam posledni hodnotu sensoru $sensorId: $valueString ($valueFloat)");
+		
+		if ($query->execute()) {
+			$this->logger->debug ("Update posledni hodnoty senzoru $sensorId probehlo ok");
+		} else {
+			$this->logger->error ("Update posledni hodnoty senzoru $sensorId probehlo s chybou ".print_r($query->errorInfo(), true));
+		}
+	}
+	
 	
 	/**
 	 * konvertuje DATE_RFC3339_EXTENDED do datetime formatu mysql s mikroskundovym rozsirenim
@@ -566,5 +589,30 @@ class SensoricNetRestApi {
 		$date = substr_replace($date, ' ', 10, 1);
 		return $date;
 	}
+	
+	/**
+	 * na zaklade $field_name vrati odpovidajici hodnotu ve stringu, TODO
+	 *
+	 * @param string $field_name
+	 * @param string $field_value
+	 */
+	private function getValueString($field_name, $field_value) {
+		if (is_object($field_value)) {
+			return 0;
+		} else return (string) $field_value;
+	}
+	
+	/**
+	 * na zaklade $field_name vrati odpovidajici hodnotu ve floatu, TODO
+	 *
+	 * @param string $field_name
+	 * @param string $field_value
+	 */
+	private function getValueFloat($field_name, $field_value) {
+		if (is_object($field_value)) {
+			return 0;
+		} else return $field_value;
+	}
+	
 
 }	

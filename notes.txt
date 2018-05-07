@@ -1,0 +1,21 @@
+brainstorm struktury api
+
+
+obecne veci...
+
+/version
+/logout
+
+veci tykajici se obecne senzoru (napr. pro zobrazovaci potreby)
+
+/sensors
+/sensors/map/...
+
+update z ttn a udp prekladace
+
+/ttn
+
+veci tykajici se sensoricnet senzoru (napr. vytvoreni senzoru v db)
+
+/sensoricnet/sensors
+

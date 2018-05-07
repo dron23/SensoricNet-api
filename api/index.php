@@ -2,8 +2,8 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';	// composer autoloader
 
-use Tracy\Debugger;
-Debugger::enable();
+//use Tracy\Debugger;
+//Debugger::enable();
 
 require_once __DIR__ . "/../config.php"; //setup, promenne
 require_once __DIR__ . "/../functions.php";
