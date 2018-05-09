@@ -413,6 +413,10 @@ class SensoricNetRestApi {
 				}
 			}
 			
+			// zaloz dashboard v grafane
+			$grafana = new GrafanaApi();
+			$grafana->createDashboard($devId, "Dashboard $devId API test", [ 'test' ]);
+			
 // 			// konec transakce
 // 			$this->db->commit();
 			
