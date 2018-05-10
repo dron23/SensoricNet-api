@@ -415,7 +415,9 @@ class SensoricNetRestApi {
 			
 			// zaloz dashboard v grafane
 			$grafana = new GrafanaApi();
-			$grafana->createDashboard($devId, "Dashboard $devId API test", [ 'test' ]);
+			if ($grafana->createDashboard($devId, "Dashboard $devId API test", [ 'test' ]) === FALSE ) {
+				$this->logger->error ("Nepodarilo se vytvorit dashboard senzoru $devId v grafane");
+			}
 			
 // 			// konec transakce
 // 			$this->db->commit();
