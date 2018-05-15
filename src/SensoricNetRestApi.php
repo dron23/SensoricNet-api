@@ -160,7 +160,8 @@ class SensoricNetRestApi {
 							'lat' => $row['lat'],
 							'lng' => $row['lng'],
 							'alt' => $row['alt'],
-							'time' => $row['time'],
+							'time' => $row['time'],		
+							
 							'sensors'=>$sensors
 					);
 				}
@@ -415,7 +416,7 @@ class SensoricNetRestApi {
 			
 			// zaloz dashboard v grafane
 			$grafana = new GrafanaApi();
-			if ($grafana->createDashboard($devId, "Dashboard $devId API test", [ 'test' ]) === FALSE ) {
+			if ($grafana->createDashboard($devId, "Dashboard $devId", [ 'test' ]) === FALSE ) {
 				$this->logger->error ("Nepodarilo se vytvorit dashboard senzoru $devId v grafane");
 			}
 			

@@ -49,17 +49,21 @@ class GrafanaApi {
 		$json = file_get_contents(__DIR__ .'/grafana_dashboard.json');
 		$json_dashboard_object = json_decode ($json);
 		$json_dashboard_object->id=$dashboardId;
+		$json_dashboard_object->uid=NULL;
 		$json_dashboard_object->title=$title;
-		$json_dashboard_object->tags=[ "test" ];
+		$json_dashboard_object->tags=[ "test", 'sensoricnet' ];
+
+		foreach ($json_dashboard_object->panels as $key=>$value) {
+			$value->targets[0]->tags[0]->value=$dashboardId;
+		}
+		
 		
 		$json_object = new \stdClass();
 		$json_object->dashboard=$json_dashboard_object;
 		$json_object->folderId=0;
 		$json_object->overwrite=true;
 		
-		
 		$this->logger->debug(print_r($json_object, true));
-		
 		
 		$ch = curl_init ($this->baseUrl.'/api/dashboards/db' );
 		
