@@ -96,8 +96,41 @@ class GrafanaApi {
 			return FALSE;
 		}
 	}
-	
-	
-	
-	
+
+	/**
+	 * Vyhleda dashboard v Grafane a vrati url
+	 *
+	 * @param string $dashboardName
+	 */
+	public function getDashboardUrlbyName(string $dashboardName) {
+		
+		$url = urldecode($this->baseUrl.'/api/search?query='.$dashboardName);
+		$ch = curl_init ($url);
+		
+		curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, 1 );
+		// 		if ($conf['api_validate_ssl_cert'] === false) curl_setopt ( $ch, CURLOPT_SSL_VERIFYPEER, false );
+		curl_setopt ( $ch, CURLOPT_HTTPHEADER, array (
+				'Authorization: Bearer '.$this->authToken
+		) );
+		//	curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+		
+		$result = curl_exec ( $ch );
+		
+		if ($result === false) {
+			$this->logger->error ("Curl call failed. Error was " . curl_error ( $ch ) );
+		} else {
+			$http_code = curl_getinfo ( $ch, CURLINFO_HTTP_CODE );
+			$this->logger->info ("Curl call was successful, return code is $http_code" );
+		}
+		curl_close ( $ch );
+		
+		if($http_code == 200) {
+			return $result;
+		} else {
+			return FALSE;
+		}
+		
+	}
+
+
 }

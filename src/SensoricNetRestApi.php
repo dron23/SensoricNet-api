@@ -155,12 +155,19 @@ class SensoricNetRestApi {
 					$query_last_values->execute ();
 					
 					$sensors = $query_last_values->fetchAll ( PDO::FETCH_CLASS );
+					
+					// jeste zjisti url prislusneho dashboardu...
+					$grafana = new GrafanaApi();
+					$dashboard_object = json_decode($grafana->getDashboardUrlbyName($row['devId']));
+					$dashborad_url = $this->conf['grafana_base_url'].$dashboard_object->url;
+					
 					// poskladej vystup pro dejva...
 					$output[$row['devId']]=array(
 							'lat' => $row['lat'],
 							'lng' => $row['lng'],
 							'alt' => $row['alt'],
-							'time' => $row['time'],		
+							'time' => $row['time'],
+							'url' => $dashborad_url,
 							
 							'sensors'=>$sensors
 					);
