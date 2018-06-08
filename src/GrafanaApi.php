@@ -63,7 +63,10 @@ class GrafanaApi {
 		$json_object->folderId=0;
 		$json_object->overwrite=true;
 		
-		$this->logger->debug(print_r($json_object, true));
+		//$this->logger->debug(print_r($json_object, true));
+
+		$this->logger->debug("Base url grafany je ".$this->baseUrl);
+		$this->logger->debug("Auth token grafany je ".substr($this->authToken, 0, 8)."...");
 		
 		$ch = curl_init ($this->baseUrl.'/api/dashboards/db' );
 		
@@ -75,7 +78,7 @@ class GrafanaApi {
 				'Authorization: Bearer '.$this->authToken,
 				'Content-Type: application/json'
 		) );
-		//	curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 		
 		$result = curl_exec ( $ch );
 		if ($result === false) {
@@ -112,7 +115,7 @@ class GrafanaApi {
 		curl_setopt ( $ch, CURLOPT_HTTPHEADER, array (
 				'Authorization: Bearer '.$this->authToken
 		) );
-		//	curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 		
 		$result = curl_exec ( $ch );
 		

@@ -159,7 +159,14 @@ class SensoricNetRestApi {
 					// jeste zjisti url prislusneho dashboardu...
 					$grafana = new GrafanaApi();
 					$dashboard_object = json_decode($grafana->getDashboardUrlbyName($row['devId']));
-					$dashborad_url = $this->conf['grafana_base_url'].$dashboard_object->url;
+					$this->logger->debug("Pri vyhledavani dashboardu podle jmena (".$row['devId'].") se vratil grafana objekt ".print_r($dashboard_object, true));
+					if (!empty($dashboard_object)) {
+						$dashborad_url = $this->conf['grafana_base_url'].$dashboard_object[0]->url;
+						$this->logger->debug("Dashboard url pro ".$row['devId']." je $dashborad_url");
+					} else {
+						$dashborad_url = "";
+						$this->logger->debug("Dashboard url pro ".$row['devId']." nebyl nalezen");
+					}
 					
 					// poskladej vystup pro dejva...
 					$output[$row['devId']]=array(
