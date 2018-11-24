@@ -29,4 +29,4 @@ $conf['grafana_auth_token'] = "********************************************";
 $conf['log_severity'] = 'debug';
 
 // params
-$conf['map_last seen_interval'] = 60; // minuty
+$conf['map_last_seen_interval'] = 60; // minuty

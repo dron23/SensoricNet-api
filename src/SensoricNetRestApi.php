@@ -138,11 +138,11 @@ class SensoricNetRestApi {
 			$query = $this->db->prepare ('
 				SELECT DISTINCT(devId) AS devId, lastLatitude AS lat, lastLongitude AS lng, lastAltitude AS alt, lastSeen AS time
 				FROM `sensors` 
-				WHERE lastLatitude IS NOT NULL AND lastLongitude IS NOT NULL AND lastAltitude IS NOT NULL AND lastSeen IS NOT NULL AND lastSeen > (NOW() - INTERVAL :map_last seen_interval MINUTE
+				WHERE lastLatitude IS NOT NULL AND lastLongitude IS NOT NULL AND lastAltitude IS NOT NULL AND lastSeen IS NOT NULL AND lastSeen > (NOW() - INTERVAL :map_last_seen_interval MINUTE
 				ORDER BY lastSeen DESC
 			');
 			
-			$query->bindParam ( ':map_last seen_interval', $this->conf['map_last seen_interval']);
+			$query->bindParam ( ':map_last seen_interval', $this->conf['map_last_seen_interval']);
 			$query->execute ();
 			
 			if ($result = $query->fetchAll ( PDO::FETCH_ASSOC )) {
