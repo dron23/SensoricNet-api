@@ -25,5 +25,8 @@ $conf['mqtt_qos'] = 5;
 $conf['grafana_base_url'] = "http://grafana.example.com:3000";
 $conf['grafana_auth_token'] = "********************************************";
 
+// logging
 $conf['log_severity'] = 'debug';
 
+// params
+$conf['map_last seen_interval'] = 60; // minuty

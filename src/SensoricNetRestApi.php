@@ -138,9 +138,11 @@ class SensoricNetRestApi {
 			$query = $this->db->prepare ('
 				SELECT DISTINCT(devId) AS devId, lastLatitude AS lat, lastLongitude AS lng, lastAltitude AS alt, lastSeen AS time
 				FROM `sensors` 
-				WHERE lastLatitude IS NOT NULL AND lastLongitude IS NOT NULL AND lastAltitude IS NOT NULL AND lastSeen IS NOT NULL
+				WHERE lastLatitude IS NOT NULL AND lastLongitude IS NOT NULL AND lastAltitude IS NOT NULL AND lastSeen IS NOT NULL AND lastSeen > (NOW() - INTERVAL :map_last seen_interval MINUTE
 				ORDER BY lastSeen DESC
 			');
+			
+			$query->bindParam ( ':map_last seen_interval', $this->conf['map_last seen_interval']);
 			$query->execute ();
 			
 			if ($result = $query->fetchAll ( PDO::FETCH_ASSOC )) {
@@ -199,11 +201,11 @@ class SensoricNetRestApi {
 		$this->logger->debug("API: ttn: ".print_r($data, true));
 
 		// test jestli je data objekt? TODO
-		
-		try {
 
-			$this->logger->debug("Vytvarim transakci");
-			$this->db->beginTransaction();
+// TODO, transakce se neosvedcila, domyslet
+// 		try {
+// 			$this->logger->debug("Vytvarim transakci");
+// 			$this->db->beginTransaction();
 
 			$valueId = array();
 			$measurementId = array();
@@ -346,11 +348,11 @@ class SensoricNetRestApi {
 			
 			// TODO, v pripade uspesneho ulozeni do db dores mqtt
 			
-		} catch (\PDOException $e) {
-			$this->db->rollBack();
-			$this->logger->error ("Chyba pri transakci vkladani mereni ".$e->getMessage());
-			//exit (); // asi teda nema cenu pokracovat? TODO
-		}
+// 		} catch (\PDOException $e) {
+// 			$this->db->rollBack();
+// 			$this->logger->error ("Chyba pri transakci vkladani mereni ".$e->getMessage());
+// 			//exit (); // asi teda nema cenu pokracovat? TODO
+// 		}
 	}
 
 	/**
