@@ -49,17 +49,11 @@ class SensoricNetRestApi {
 			$auth->login();
 			if ($auth->doLogin($username, $password)) {
 				
-				$this->logger->debug("authorize");
-				
-				$this->logger->debug("mqtt init");
-				
-				$this->mqtt = new Mosquitto\Client();
-				$this->mqtt->connect($this->conf['mqtt_host'], $this->conf['mqtt_port'], $this->conf['mqtt_qos']);
-				//		$client->subscribe('/#', 1);
-				
+				$this->logger->debug("authorization passed");
 				return TRUE;
 			}
 		}
+		$this->logger->warning("authorization failed");
 		return FALSE;
 	}
 
@@ -207,6 +201,12 @@ class SensoricNetRestApi {
 // 			$this->logger->debug("Vytvarim transakci");
 // 			$this->db->beginTransaction();
 
+		// pripoj se k mqtt brokeru
+		$this->logger->debug("mqtt init");
+		
+		$this->mqtt = new Mosquitto\Client();
+		$this->mqtt->connect($this->conf['mqtt_host'], $this->conf['mqtt_port'], $this->conf['mqtt_qos']);
+		
 			$valueId = array();
 			$measurementId = array();
 			
@@ -231,6 +231,7 @@ class SensoricNetRestApi {
 					
 					// kdy a jak posilat data dal po mqtt, tady to urcite neni vhodne...
 					// TODO
+					
 					$mqtt_topic = $this->conf['mqtt_basic_topic'].'/'.$data->dev_id.'/'.$field_name;
 					$mqtt_value = $valueFloat;
 					$this->logger->debug("mqtt topic $mqtt_topic -> $valueFloat");
@@ -270,6 +271,8 @@ class SensoricNetRestApi {
 				}
 			}
 			
+			// odpoj se od brokeru
+			$this->mqtt->disconnect();
 			
 			// vloz vsechna mereni (gw) ze kterych tyto hodnoty prisla
 			foreach($data->metadata->gateways as $key=>$gateway) {
