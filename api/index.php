@@ -22,3 +22,6 @@ $server->addClass ( '\SensoricNet\SensoricNetRestApi' );
 
 $server->handle ();
 
+$runtime = round(microtime(TRUE) - $_SERVER['REQUEST_TIME_FLOAT'], 6);
+echo "Script running for $runtime seconds";
+$logger->debug("Script running for $runtime seconds");

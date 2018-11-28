@@ -104,7 +104,7 @@ class SensoricNetRestApi {
 		$this->logger->debug("API: URL: ".$_SERVER['REQUEST_URI']);
 		
 		$query = $this->db->prepare ('
-			SELECT * FROM `Sensors`
+			SELECT * FROM `sensors`
 		');
 		$query->execute ();
 	
@@ -113,6 +113,53 @@ class SensoricNetRestApi {
 		} else
 			return false;
 	}
+
+	/**
+	 * Vrátí aktualni info o danem sensoru
+	 *
+	 * @url GET /sensors/id/$dev_id
+	 */
+	public function getSensorInfo($dev_id = null) {
+		$this->logger->debug("API: URL: ".$_SERVER['REQUEST_URI']);
+		
+		$query = $this->db->prepare ('
+			SELECT * FROM `sensors` 
+			WHERE devId = :dev_id
+		');
+		$query->bindParam ( ':dev_id', $dev_id);
+		$query->execute ();
+		
+		if ($result = $query->fetchAll ( PDO::FETCH_ASSOC)) {
+			return $result;
+		} else
+			return false;
+	}
+
+	/**
+	 * Vrátí kdy byl senzor naposledy aktivni
+	 *
+	 * @noAuth
+	 * @url GET /sensors/id/$dev_id/last_seen
+	 */
+	public function getSensorInfoLastSeen($dev_id = null) {
+		$this->logger->debug("API: URL: ".$_SERVER['REQUEST_URI']);
+
+		$this->logger->debug("API: LastSeen: dev_id $dev_id");
+		
+		$query = $this->db->prepare ('
+			SELECT lastSeen FROM `sensors`
+			WHERE devId = :dev_id
+			LIMIT 1
+		');
+		$query->bindParam ( ':dev_id', $dev_id);
+		$query->execute ();
+		
+		if ($result = $query->fetchAll ( PDO::FETCH_ASSOC)) {
+			return $result;
+		} else
+			return false;
+	}
+	
 
 	/**
 	 * Vrati senzory s vystupy pro vykresleni mapy
@@ -344,10 +391,10 @@ class SensoricNetRestApi {
 				}
 			}
 			
-			// konec transakce
-			$this->db->commit();
+// 			// konec transakce
+// 			$this->db->commit();
 			
-			$this->logger->debug ("Transakce byla commitnuta");
+// 			$this->logger->debug ("Transakce byla commitnuta");
 			
 			// TODO, v pripade uspesneho ulozeni do db dores mqtt
 			
