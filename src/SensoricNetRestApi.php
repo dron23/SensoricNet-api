@@ -35,10 +35,11 @@ class SensoricNetRestApi {
 // 		foreach (getallheaders() as $name => $value) {
 // 			$this->logger->debug ("headers $name: $value");
 // 		}
-		
-		foreach ($_SERVER as $name => $value) {
-			$this->logger->debug("server $name: $value");
-		}
+
+		// debug server headers
+// 		foreach ($_SERVER as $name => $value) {
+// 			$this->logger->debug("server $name: $value");
+// 		}
 		
 		$username = $_SERVER['PHP_AUTH_USER'];
 		$password = $_SERVER['PHP_AUTH_PW'];
@@ -448,7 +449,15 @@ class SensoricNetRestApi {
 		$sensors[5]=array('fieldId' => 'analog_in_5', 'unitType' => '5', 'unitName' => 'ppm', 'description' => 'Prach 2,5um');
 		$sensors[6]=array('fieldId' => 'analog_in_6', 'unitType' => '5', 'unitName' => 'ppm', 'description' => 'Prach 10um');
 		$sensors[7]=array('fieldId' => 'gps_7', 'unitType' => '4', 'unitName' => 'GPS', 'description' => 'GPS');
-
+		// ted navic jeste data ze site, TODO
+		$sensors[8]=array('fieldId' => 'digital_in_8', 'unitType' => '5', 'unitName' => '', 'description' => 'Signal strength'); // signal strength, 23
+		$sensors[9]=array('fieldId' => 'digital_in_9', 'unitType' => '5', 'unitName' => '', 'description' => 'Channel bit error rate'); // channel bit error rate, 52
+		$sensors[10]=array('fieldId' => 'analog_in_10', 'unitType' => '5', 'unitName' => '', 'description' => 'signal power'); // signal power, 570.72
+		$sensors[11]=array('fieldId' => 'analog_in_11', 'unitType' => '5', 'unitName' => '', 'description' => 'total power'); // total power, 0
+		$sensors[12]=array('fieldId' => 'analog_in_12', 'unitType' => '5', 'unitName' => '', 'description' => 'tx power'); // tx power, 230
+		$sensors[13]=array('fieldId' => 'analog_in_13', 'unitType' => '5', 'unitName' => '', 'description' => 'tx time'); // tx time, 629.2
+		$sensors[14]=array('fieldId' => 'analog_in_14', 'unitType' => '5', 'unitName' => '', 'description' => 'rx time'); // rx time, 135.36
+		
 		// TODO, je to treba resit jako transakci? imho asi ani ne
 // 		try {
 // 			$this->logger->debug("Vytvarim transakci");
