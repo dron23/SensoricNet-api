@@ -191,7 +191,7 @@ class SensoricNetRestApi {
 				foreach ($result as $key=>$row) {
 					// pro kazdy senzor dohledej jeho cidla a posledni hodnoty
 					$query_last_values = $this->db->prepare ('
-						SELECT fieldId, unitType, unitName, lastValueFloat AS lastValue, lastSeen AS timestamp
+						SELECT fieldId, unitType, description, unitName, lastValueFloat AS lastValue, lastSeen AS timestamp
 						FROM `sensors` 
 						WHERE devId = :devId AND lastValueFloat IS NOT NULL
 					');
