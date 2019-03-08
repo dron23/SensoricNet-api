@@ -122,7 +122,7 @@ class SensoricNetRestApi {
 	 * @noAuth
 	 * @url GET /sensors/simple
 	 */
-	public function getSensors() {
+	public function getSensorsSimple() {
 		$this->logger->debug("API: URL: ".$_SERVER['REQUEST_URI']);
 		
 		$query = $this->db->prepare ('
