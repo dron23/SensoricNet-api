@@ -116,6 +116,27 @@ class SensoricNetRestApi {
 	}
 
 	/**
+	 * Vrátí všechny devId senzorů (přihlášeného uživatele?), TODO
+	 * Test Zabbix LLD
+	 *
+	 * @noAuth
+	 * @url GET /sensors/simple
+	 */
+	public function getSensors() {
+		$this->logger->debug("API: URL: ".$_SERVER['REQUEST_URI']);
+		
+		$query = $this->db->prepare ('
+			SELECT DISTINCT devId FROM `sensors`
+		');
+		$query->execute ();
+		
+		if ($result = $query->fetchAll ( PDO::FETCH_ASSOC)) {
+			return $result;
+		} else
+			return false;
+	}
+
+	/**
 	 * Vrátí aktualni info o danem sensoru
 	 *
 	 * @url GET /sensors/id/$dev_id
@@ -148,7 +169,10 @@ class SensoricNetRestApi {
 		$this->logger->debug("API: LastSeen: dev_id $dev_id");
 		
 		$query = $this->db->prepare ('
-			SELECT lastSeen FROM `sensors`
+			SELECT 
+				MAX(lastSeen) AS lastSeen, 
+				UNIX_TIMESTAMP() - UNIX_TIMESTAMP(MAX(lastSeen)) AS lastSeenSecs 
+			FROM `sensors`
 			WHERE devId = :dev_id
 			LIMIT 1
 		');
