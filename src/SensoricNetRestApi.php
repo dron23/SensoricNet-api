@@ -117,9 +117,7 @@ class SensoricNetRestApi {
 
 	/**
 	 * Vrátí všechny devId senzorů (přihlášeného uživatele?), TODO
-	 * Test Zabbix LLD
 	 *
-	 * @noAuth
 	 * @url GET /sensors/simple
 	 */
 	public function getSensorsSimple() {
@@ -136,6 +134,34 @@ class SensoricNetRestApi {
 			return false;
 	}
 
+	/**
+	 * Vrátí všechny devId senzorů (přihlášeného uživatele) ve formatu pro Zabbix LLD
+	 *
+	 * @noAuth
+	 * @url GET /sensors/zabbix
+	 */
+	public function getSensorsZabbix() {
+		$this->logger->debug("API: URL: ".$_SERVER['REQUEST_URI']);
+		
+		$query = $this->db->prepare ('
+			SELECT DISTINCT devId FROM `sensors`
+		');
+		$query->execute ();
+		
+		if ($result = $query->fetchAll ( PDO::FETCH_ASSOC)) {
+			$lld_object = new \stdClass ();
+			$lld_object->data = array();
+			foreach ($result as $key=>$devId) {
+				$sensor_object = new \stdClass ();
+				$sensor_object->{'{#DEVID}'} = $devId['devId'];
+				$lld_object->data[]=$sensor_object;
+			}
+			return $lld_object;
+		} else
+			return false;
+	}
+	
+	
 	/**
 	 * Vrátí aktualni info o danem sensoru
 	 *
